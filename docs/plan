@@ -1,0 +1,39 @@
+Phase 1 — Project Setup
+├── Create GitHub repository
+├── Clone repository
+├── Create folder structure
+├── Create virtual environment
+├── Install dependencies
+├── Configure Git
+└── Run FastAPI
+
+Phase 2 — Authentication
+├── User model
+├── Database migration
+├── Password hashing
+├── JWT authentication
+├── Register API
+├── Login API
+├── Postman testing
+└── Frontend login/register
+
+Phase 3 — Product Management
+├── Product model
+├── CRUD APIs
+├── Product images
+├── Product search
+└── Frontend pages
+
+Phase 4 — Inventory
+
+Phase 5 — Shopping Cart
+
+Phase 6 — Orders
+
+Phase 7 — Payments
+
+Phase 8 — Dashboard
+
+Phase 9 — Marketing Features
+
+Phase 10 — AI & Automation
