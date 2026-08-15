@@ -3,7 +3,7 @@ from app.models.user import User
 from app.models.role import Role
 from app.core.security import hash_password
 
-OWNER_EMAIL = "amriva.05@example.com"
+OWNER_EMAIL = "amriva.05@gmail.com"
 OWNER_PASSWORD = "AtharvSingh@221203"
 
 def seed_owner():

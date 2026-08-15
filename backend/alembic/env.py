@@ -17,6 +17,9 @@ from sqlalchemy import pool
 
 from alembic import context
 
+from app.models.product import Product
+from app.models.category import Category
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
