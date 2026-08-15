@@ -6,6 +6,15 @@ from app.models.product import Product
 from app.models.category import Category
 from app.schemas.product import ProductCreate
 
+import uuid
+from decimal import Decimal
+from typing import Optional
+
+from sqlalchemy import or_
+from sqlalchemy.orm import Session
+
+from app.models.product import Product, ProductStatus
+
 
 def create_product(db: Session, product_data: ProductCreate) -> Product:
     category = db.query(Category).filter(Category.id == product_data.category_id).first()
@@ -29,8 +38,39 @@ def create_product(db: Session, product_data: ProductCreate) -> Product:
     return new_product
 
 
-def get_all_products(db: Session) -> list[Product]:
-    return db.query(Product).all()
+
+
+def get_all_products(
+    db: Session,
+    search: Optional[str] = None,
+    category_id: Optional[uuid.UUID] = None,
+    min_price: Optional[Decimal] = None,
+    max_price: Optional[Decimal] = None,
+    status: Optional[ProductStatus] = None
+) -> list[Product]:
+    query = db.query(Product)
+
+    if search:
+        query = query.filter(
+            or_(
+                Product.name.ilike(f"%{search}%"),
+                Product.description.ilike(f"%{search}%")
+            )
+        )
+
+    if category_id:
+        query = query.filter(Product.category_id == category_id)
+
+    if min_price is not None:
+        query = query.filter(Product.price >= min_price)
+
+    if max_price is not None:
+        query = query.filter(Product.price <= max_price)
+
+    if status:
+        query = query.filter(Product.status == status)
+
+    return query.all()
 
 
 def get_product_by_id(db: Session, product_id: uuid.UUID) -> Product:

@@ -17,6 +17,13 @@ from app.services.product_service import (
     delete_product
 )
 
+
+import uuid
+from decimal import Decimal
+from typing import Optional
+
+from app.models.product import ProductStatus
+
 router = APIRouter(
     prefix="/products",
     tags=["Products"]
@@ -32,9 +39,18 @@ def add_product(
     return create_product(db, product_data)
 
 
+
+
 @router.get("/", response_model=list[ProductResponse])
-def list_products(db: Session = Depends(get_db)):
-    return get_all_products(db)
+def list_products(
+    search: Optional[str] = None,
+    category_id: Optional[uuid.UUID] = None,
+    min_price: Optional[Decimal] = None,
+    max_price: Optional[Decimal] = None,
+    status: Optional[ProductStatus] = None,
+    db: Session = Depends(get_db)
+):
+    return get_all_products(db, search, category_id, min_price, max_price, status)
 
 
 @router.get("/{product_id}", response_model=ProductResponse)
