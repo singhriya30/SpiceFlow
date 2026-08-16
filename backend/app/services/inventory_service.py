@@ -26,7 +26,7 @@ def create_inventory_for_product(db: Session, product_id: uuid.UUID) -> Inventor
     return new_inventory
 
 
-def adjust_stock(db: Session, product_id: uuid.UUID, adjustment: InventoryAdjust) -> Inventory:
+def _apply_stock_adjustment(db: Session, product_id: uuid.UUID, adjustment: InventoryAdjust) -> Inventory:
     inventory = get_inventory_by_product_id(db, product_id)
 
     new_quantity = inventory.quantity + adjustment.quantity_change
@@ -45,10 +45,14 @@ def adjust_stock(db: Session, product_id: uuid.UUID, adjustment: InventoryAdjust
     )
     db.add(history_entry)
 
+    return inventory
+
+
+def adjust_stock(db: Session, product_id: uuid.UUID, adjustment: InventoryAdjust) -> Inventory:
+    inventory = _apply_stock_adjustment(db, product_id, adjustment)
     db.commit()
     db.refresh(inventory)
     return inventory
-
 
 def update_minimum_stock(db: Session, product_id: uuid.UUID, data: MinimumStockUpdate) -> Inventory:
     inventory = get_inventory_by_product_id(db, product_id)

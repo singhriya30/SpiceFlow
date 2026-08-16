@@ -7,14 +7,21 @@ from app.models.review import Review
 from app.models.product import Product
 from app.schemas.review import ReviewCreate
 
+from app.models.order import Order, OrderStatus
+from app.models.order_item import OrderItem
 
 def has_purchased_product(db: Session, customer_id: uuid.UUID, product_id: uuid.UUID) -> bool:
-    # PLACEHOLDER: Once Orders (Phase 6) exists, this should check whether
-    # the customer has a completed/delivered order containing this product.
-    # For now, this always returns True so Reviews can be built and tested.
-    # TODO: Replace with a real query against Orders/OrderItems in Phase 6,
-    # then remove this comment and the always-True behavior.
-    return True
+    purchase = (
+        db.query(OrderItem)
+        .join(Order, OrderItem.order_id == Order.id)
+        .filter(
+            Order.customer_id == customer_id,
+            Order.status == OrderStatus.delivered,
+            OrderItem.product_id == product_id
+        )
+        .first()
+    )
+    return purchase is not None
 
 
 def create_review(db: Session, customer_id: uuid.UUID, review_data: ReviewCreate) -> Review:
