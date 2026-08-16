@@ -19,6 +19,7 @@ class User(Base):
 
     role_id = Column(UUID(as_uuid=True), ForeignKey("roles.id", ondelete="RESTRICT"), nullable=False)
     role = relationship("Role", back_populates="users")
+    addresses = relationship("Address", back_populates="user", cascade="all, delete-orphan")
 
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
