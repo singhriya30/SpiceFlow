@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 
 from app.models.product import Product, ProductStatus
 
+from app.services.inventory_service import create_inventory_for_product
 
 def create_product(db: Session, product_data: ProductCreate) -> Product:
     category = db.query(Category).filter(Category.id == product_data.category_id).first()
@@ -35,6 +36,7 @@ def create_product(db: Session, product_data: ProductCreate) -> Product:
     db.add(new_product)
     db.commit()
     db.refresh(new_product)
+    create_inventory_for_product(db, new_product.id)
     return new_product
 
 

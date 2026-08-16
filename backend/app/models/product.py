@@ -28,6 +28,7 @@ class Product(Base):
     status = Column(Enum(ProductStatus), nullable=False, default=ProductStatus.active)
 
     category = relationship("Category", back_populates="products")
+    inventory = relationship("Inventory", back_populates="product", uselist=False)
 
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
