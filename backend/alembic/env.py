@@ -25,6 +25,8 @@ from app.models.inventory_history import InventoryHistory
 
 from app.models.address import Address
 
+from app.models.review import Review
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
