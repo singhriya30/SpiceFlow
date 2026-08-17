@@ -8,6 +8,8 @@ from app.api.address import router as address_router
 from app.api.review import router as review_router
 from app.api.order import router as order_router
 from app.api.analytics import router as analytics_router
+from app.api.employee import router as employee_router
+
 
 app = FastAPI(
     title="SpiceFlow API",
@@ -23,6 +25,7 @@ app.include_router(address_router)
 app.include_router(review_router)
 app.include_router(order_router)
 app.include_router(analytics_router)
+app.include_router(employee_router)
 
 @app.get("/")
 def root():

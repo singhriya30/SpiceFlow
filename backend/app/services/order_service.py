@@ -13,6 +13,9 @@ from app.schemas.inventory import InventoryAdjust
 from app.core.config import GST_RATE
 from app.services.inventory_service import _apply_stock_adjustment
 
+from app.models.user import User
+from app.models.role import Role
+
 
 def create_order(db: Session, customer_id: uuid.UUID, order_data: OrderCreate) -> Order:
     address = db.query(Address).filter(Address.id == order_data.shipping_address_id).first()
@@ -182,3 +185,56 @@ def update_order_status(db: Session, order_id: uuid.UUID, new_status: OrderStatu
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update order status due to an unexpected error"
         )
+
+
+def assign_delivery(db: Session, order_id: uuid.UUID, delivery_employee_id: uuid.UUID) -> Order:
+    order = get_order_by_id(db, order_id)
+
+    if order.status not in [OrderStatus.packed, OrderStatus.shipped]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot assign delivery to an order with status '{order.status.value}'. Order must be packed or shipped."
+        )
+
+    delivery_user = (
+        db.query(User)
+        .join(Role, User.role_id == Role.id)
+        .filter(User.id == delivery_employee_id, Role.role_name == "Delivery")
+        .first()
+    )
+    if not delivery_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Delivery employee not found or does not have the Delivery role"
+        )
+    if not delivery_user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot assign an inactive delivery employee"
+        )
+
+    order.delivery_employee_id = delivery_employee_id
+    db.commit()
+    db.refresh(order)
+    return order
+
+
+def get_orders_for_delivery_employee(db: Session, delivery_employee_id: uuid.UUID) -> list[Order]:
+    return (
+        db.query(Order)
+        .filter(Order.delivery_employee_id == delivery_employee_id)
+        .order_by(Order.created_at.desc())
+        .all()
+    )
+
+
+def mark_order_delivered(db: Session, order_id: uuid.UUID, delivery_employee_id: uuid.UUID) -> Order:
+    order = get_order_by_id(db, order_id)
+
+    if order.delivery_employee_id != delivery_employee_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This order is not assigned to you"
+        )
+
+    return update_order_status(db, order_id, OrderStatus.delivered)

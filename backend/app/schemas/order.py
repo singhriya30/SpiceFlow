@@ -50,3 +50,6 @@ class OrderResponse(BaseModel):
 
 class OrderStatusUpdate(BaseModel):
     status: OrderStatus
+
+class DeliveryAssignment(BaseModel):
+    delivery_employee_id: uuid.UUID

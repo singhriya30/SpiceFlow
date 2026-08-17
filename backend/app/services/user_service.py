@@ -53,4 +53,10 @@ def authenticate_user(db: Session, email: str, password: str) -> User:
             detail="Invalid email or password"
         )
 
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This account has been deactivated"
+        )
+
     return user

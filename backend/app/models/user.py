@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import Column, String, DateTime, ForeignKey
+from sqlalchemy import Column, String, DateTime, ForeignKey, Boolean
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -16,6 +16,7 @@ class User(Base):
     email = Column(String(255), unique=True, nullable=False, index=True)
     phone = Column(String(15), nullable=False)
     password_hash = Column(String(255), nullable=False)
+    is_active = Column(Boolean, nullable=False, default=True)
 
     role_id = Column(UUID(as_uuid=True), ForeignKey("roles.id", ondelete="RESTRICT"), nullable=False)
     role = relationship("Role", back_populates="users")

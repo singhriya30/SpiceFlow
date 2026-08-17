@@ -23,6 +23,8 @@ class Order(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     customer_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     status = Column(Enum(OrderStatus), nullable=False, default=OrderStatus.pending)
+    delivery_employee_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+
 
     shipping_label = Column(String(50), nullable=False)
     shipping_address_line1 = Column(String(255), nullable=False)
@@ -38,5 +40,6 @@ class Order(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
-    customer = relationship("User")
+    customer = relationship("User", foreign_keys=[customer_id])
     items = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
+    delivery_employee = relationship("User", foreign_keys=[delivery_employee_id])
