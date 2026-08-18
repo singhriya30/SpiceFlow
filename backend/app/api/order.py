@@ -1,5 +1,5 @@
 import uuid
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database.database import get_db
@@ -21,6 +21,8 @@ from app.services.order_service import (
     get_orders_for_delivery_employee,
     mark_order_delivered
 )
+
+from app.models.order import OrderStatus
 
 
 router = APIRouter(
@@ -71,6 +73,14 @@ def get_order(
 ):
     if current_user.role.role_name == "Customer":
         return get_order_for_customer(db, order_id, current_user.id)
+    if current_user.role.role_name == "Delivery":
+        order = get_order_by_id(db, order_id)
+        if order.delivery_employee_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="This order is not assigned to you"
+            )
+        return order
     return get_order_by_id(db, order_id)
 
 
@@ -81,6 +91,11 @@ def change_order_status(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role("Owner", "Employee"))
 ):
+    if status_data.status == OrderStatus.delivered:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Orders can only be marked delivered by the assigned delivery employee via the mark-delivered endpoint"
+        )
     return update_order_status(db, order_id, status_data.status)
 
 
