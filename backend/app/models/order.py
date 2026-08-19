@@ -43,3 +43,6 @@ class Order(Base):
     customer = relationship("User", foreign_keys=[customer_id])
     items = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
     delivery_employee = relationship("User", foreign_keys=[delivery_employee_id])
+    @property
+    def customer_name(self) -> str:
+        return f"{self.customer.first_name} {self.customer.last_name}"

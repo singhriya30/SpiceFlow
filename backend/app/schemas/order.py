@@ -31,6 +31,7 @@ class OrderItemResponse(BaseModel):
 class OrderResponse(BaseModel):
     id: uuid.UUID
     customer_id: uuid.UUID
+    customer_name: str
     status: OrderStatus
     shipping_label: str
     shipping_address_line1: str

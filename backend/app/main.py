@@ -10,11 +10,21 @@ from app.api.order import router as order_router
 from app.api.analytics import router as analytics_router
 from app.api.employee import router as employee_router
 
+from fastapi.middleware.cors import CORSMiddleware
+
 
 app = FastAPI(
     title="SpiceFlow API",
     description="Backend API for the SpiceFlow organic masala business",
     version="1.0.0"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(auth_router)
