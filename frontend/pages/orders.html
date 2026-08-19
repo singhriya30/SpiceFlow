@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpiceFlow — Orders</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <div class="app-shell">
+        <div id="sidebar-container"></div>
+
+        <div class="main-content">
+            <div class="page-header">
+                <h1>Orders</h1>
+            </div>
+
+            <div class="card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Order</th>
+                            <th>Customer</th>
+                            <th>Status</th>
+                            <th class="num">Total</th>
+                            <th>Placed</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="orders-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="order-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-box" style="max-width: 560px;">
+            <h2>Order <span id="detail-order-id"></span></h2>
+            <p class="text-muted mb-1" id="detail-customer"></p>
+
+            <div style="margin-bottom: 1rem;">
+                <strong>Shipping to:</strong>
+                <p id="detail-address" style="margin: 0.25rem 0; color: var(--color-ink-soft);"></p>
+            </div>
+
+            <table style="margin-bottom: 1rem;">
+                <thead>
+                    <tr><th>Item</th><th class="num">Qty</th><th class="num">Price</th><th class="num">Subtotal</th></tr>
+                </thead>
+                <tbody id="detail-items"></tbody>
+            </table>
+
+            <div style="text-align: right; margin-bottom: 1.5rem;">
+                <div>Subtotal: <span class="num" id="detail-subtotal" style="display: inline-block; width: 100px;"></span></div>
+                <div>GST: <span class="num" id="detail-gst" style="display: inline-block; width: 100px;"></span></div>
+                <div><strong>Total: <span class="num" id="detail-total" style="display: inline-block; width: 100px;"></span></strong></div>
+            </div>
+
+            <div id="status-section" class="mb-1"></div>
+            <div id="delivery-section" class="mb-1"></div>
+
+            <p id="detail-error" class="error-text" style="display: none;"></p>
+
+            <button type="button" class="btn" id="detail-close-btn">Close</button>
+        </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/layout.js"></script>
+    <script>
+        function formatCurrency(amount) {
+            return "₹" + Number(amount).toLocaleString("en-IN", { minimumFractionDigits: 2 });
+        }
+
+        function formatDate(isoString) {
+            return new Date(isoString).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+        }
+
+        async function loadOrders() {
+            const orders = await apiRequest("/orders/all");
+            const tbody = document.getElementById("orders-table-body");
+
+            if (orders.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="empty-state">No orders yet.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = orders.map(o => `
+                <tr>
+                    <td>#${o.id.slice(0, 8)}</td>
+                    <td>${o.customer_name}</td>
+                    <td><span class="badge badge-${o.status}">${o.status}</span></td>
+                    <td class="num">${formatCurrency(o.total_amount)}</td>
+                    <td>${formatDate(o.created_at)}</td>
+                    <td><button class="btn-sm" onclick="openOrderDetail('${o.id}')">View</button></td>
+                </tr>
+            `).join("");
+        }
+
+        const VALID_TRANSITIONS = {
+            pending: ["confirmed", "cancelled"],
+            confirmed: ["packed", "cancelled"],
+            packed: ["shipped", "cancelled"],
+            shipped: [],
+            delivered: [],
+            cancelled: []
+        };
+
+        let currentOrder = null;
+        let currentUserRole = null;
+        let deliveryEmployees = [];
+
+        function renderStatusSection(order) {
+            const section = document.getElementById("status-section");
+            const nextStatuses = VALID_TRANSITIONS[order.status] || [];
+
+            if (currentUserRole !== "Owner" && currentUserRole !== "Employee") {
+                section.innerHTML = `<p><strong>Status:</strong> <span class="badge badge-${order.status}">${order.status}</span></p>`;
+                return;
+            }
+
+            if (nextStatuses.length === 0) {
+                section.innerHTML = `<p><strong>Status:</strong> <span class="badge badge-${order.status}">${order.status}</span> <span class="text-muted">(no further changes available here)</span></p>`;
+                return;
+            }
+
+            section.innerHTML = `
+                <label for="status-select">Change status</label>
+                <div style="display:flex; gap:0.5rem;">
+                    <select id="status-select" style="margin-bottom:0;">
+                        ${nextStatuses.map(s => `<option value="${s}">${s}</option>`).join("")}
+                    </select>
+                    <button type="button" class="btn-primary btn-sm" id="update-status-btn">Update</button>
+                </div>
+            `;
+
+            document.getElementById("update-status-btn").addEventListener("click", async () => {
+                const newStatus = document.getElementById("status-select").value;
+                const errorEl = document.getElementById("detail-error");
+                errorEl.style.display = "none";
+                try {
+                    await apiRequest(`/orders/${currentOrder.id}/status`, "PUT", { status: newStatus });
+                    await loadOrders();
+                    await openOrderDetail(currentOrder.id);
+                } catch (err) {
+                    errorEl.textContent = err.message;
+                    errorEl.style.display = "block";
+                }
+            });
+        }
+
+        async function renderDeliverySection(order) {
+            const section = document.getElementById("delivery-section");
+
+            if (currentUserRole !== "Owner") {
+                section.innerHTML = "";
+                return;
+            }
+
+            if (!["packed", "shipped"].includes(order.status)) {
+                section.innerHTML = "";
+                return;
+            }
+
+            if (order.delivery_employee_id) {
+                section.innerHTML = `<p class="text-muted">Delivery employee already assigned.</p>`;
+                return;
+            }
+
+            if (deliveryEmployees.length === 0) {
+                try {
+                    const employees = await apiRequest("/employees/");
+                    deliveryEmployees = employees.filter(e => e.role_name === "Delivery" && e.is_active);
+                } catch (err) {
+                    deliveryEmployees = [];
+                }
+            }
+
+            if (deliveryEmployees.length === 0) {
+                section.innerHTML = `<p class="text-muted">No active delivery employees available.</p>`;
+                return;
+            }
+
+            section.innerHTML = `
+                <label for="delivery-select">Assign delivery employee</label>
+                <div style="display:flex; gap:0.5rem;">
+                    <select id="delivery-select" style="margin-bottom:0;">
+                        ${deliveryEmployees.map(e => `<option value="${e.id}">${e.first_name} ${e.last_name}</option>`).join("")}
+                    </select>
+                    <button type="button" class="btn-primary btn-sm" id="assign-delivery-btn">Assign</button>
+                </div>
+            `;
+
+            document.getElementById("assign-delivery-btn").addEventListener("click", async () => {
+                const deliveryId = document.getElementById("delivery-select").value;
+                const errorEl = document.getElementById("detail-error");
+                errorEl.style.display = "none";
+                try {
+                    await apiRequest(`/orders/${currentOrder.id}/assign-delivery`, "PUT", { delivery_employee_id: deliveryId });
+                    await loadOrders();
+                    await openOrderDetail(currentOrder.id);
+                } catch (err) {
+                    errorEl.textContent = err.message;
+                    errorEl.style.display = "block";
+                }
+            });
+        }
+
+        async function openOrderDetail(orderId) {
+            document.getElementById("detail-error").style.display = "none";
+
+            const order = await apiRequest(`/orders/${orderId}`);
+            currentOrder = order;
+
+            document.getElementById("detail-order-id").textContent = "#" + order.id.slice(0, 8);
+            document.getElementById("detail-customer").textContent = order.customer_name;
+            document.getElementById("detail-address").textContent =
+                `${order.shipping_label} — ${order.shipping_address_line1}${order.shipping_address_line2 ? ", " + order.shipping_address_line2 : ""}, ${order.shipping_city}, ${order.shipping_state} ${order.shipping_pincode}`;
+
+            document.getElementById("detail-items").innerHTML = order.items.map(item => `
+                <tr>
+                    <td>${item.product_id.slice(0, 8)}...</td>
+                    <td class="num">${item.quantity}</td>
+                    <td class="num">${formatCurrency(item.unit_price)}</td>
+                    <td class="num">${formatCurrency(item.subtotal)}</td>
+                </tr>
+            `).join("");
+
+            document.getElementById("detail-subtotal").textContent = formatCurrency(order.subtotal);
+            document.getElementById("detail-gst").textContent = formatCurrency(order.gst_amount);
+            document.getElementById("detail-total").textContent = formatCurrency(order.total_amount);
+
+            renderStatusSection(order);
+            await renderDeliverySection(order);
+
+            document.getElementById("order-modal").style.display = "flex";
+        }
+
+        document.getElementById("detail-close-btn").addEventListener("click", () => {
+            document.getElementById("order-modal").style.display = "none";
+        });
+
+        (async function init() {
+            const user = await initLayout("orders.html");
+            if (!user) return;
+
+            currentUserRole = user.role_name;
+
+            try {
+                await loadOrders();
+            } catch (err) {
+                alert("Failed to load orders: " + err.message);
+            }
+        })();
+    </script>
+</body>
+</html>

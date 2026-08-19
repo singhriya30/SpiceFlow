@@ -1,0 +1,396 @@
+/* ============================================
+   SpiceFlow Dashboard — Shared Styles
+   ============================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+:root {
+    /* Palette */
+    --color-paper: #FAF7F1;
+    --color-paper-raised: #FFFFFF;
+    --color-ink: #2B2620;
+    --color-ink-soft: #6B6357;
+    --color-turmeric: #C99A2E;
+    --color-turmeric-dark: #A67F22;
+    --color-cardamom: #5B7F5E;
+    --color-cardamom-bg: #E8EFE8;
+    --color-chili: #B5432E;
+    --color-chili-bg: #F6E6E2;
+    --color-clove: #6B4A3A;
+    --color-line: #E4DDD0;
+
+    /* Type */
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-body: 'Inter', -apple-system, sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+
+    /* Layout */
+    --sidebar-width: 220px;
+    --radius: 6px;
+    --shadow-card: 0 1px 3px rgba(43, 38, 32, 0.08);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+h1, h2, h3 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    margin: 0 0 0.5rem 0;
+    letter-spacing: -0.01em;
+}
+
+h1 { font-size: 1.6rem; }
+h2 { font-size: 1.2rem; }
+h3 { font-size: 1rem; color: var(--color-ink-soft); font-weight: 500; }
+
+a {
+    color: var(--color-clove);
+}
+
+/* ---------- Layout shell ---------- */
+
+.app-shell {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: var(--sidebar-width);
+    background: var(--color-ink);
+    color: var(--color-paper);
+    padding: 1.5rem 0;
+    flex-shrink: 0;
+}
+
+.sidebar .brand {
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--color-turmeric);
+    padding: 0 1.5rem 1.5rem 1.5rem;
+    border-bottom: 1px solid rgba(250, 247, 241, 0.12);
+    margin-bottom: 1rem;
+}
+
+.sidebar nav a {
+    display: block;
+    padding: 0.65rem 1.5rem;
+    color: rgba(250, 247, 241, 0.75);
+    text-decoration: none;
+    font-size: 0.92rem;
+    border-left: 3px solid transparent;
+}
+
+.sidebar nav a:hover {
+    color: var(--color-paper);
+    background: rgba(250, 247, 241, 0.06);
+}
+
+.sidebar nav a.active {
+    color: var(--color-paper);
+    border-left-color: var(--color-turmeric);
+    background: rgba(250, 247, 241, 0.08);
+}
+
+.sidebar .logout-link {
+    margin-top: 1.5rem;
+    border-top: 1px solid rgba(250, 247, 241, 0.12);
+    padding-top: 1rem;
+}
+
+.main-content {
+    flex: 1;
+    padding: 2rem 2.5rem;
+    max-width: 1200px;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--color-line);
+}
+
+/* ---------- Cards ---------- */
+
+.card {
+    background: var(--color-paper-raised);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-card);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.25rem;
+}
+
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-card {
+    background: var(--color-paper-raised);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-card);
+    padding: 1.1rem 1.3rem;
+    border-left: 3px solid var(--color-turmeric);
+}
+
+.stat-card .stat-label {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-ink-soft);
+    margin-bottom: 0.35rem;
+}
+
+.stat-card .stat-value {
+    font-family: var(--font-mono);
+    font-size: 1.5rem;
+    font-weight: 500;
+}
+
+/* ---------- Tables (the ledger) ---------- */
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+thead th {
+    text-align: left;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-ink-soft);
+    font-weight: 500;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 2px solid var(--color-line);
+}
+
+tbody td {
+    padding: 0.65rem 0.75rem;
+    border-bottom: 1px solid var(--color-line);
+}
+
+tbody tr:hover {
+    background: rgba(201, 154, 46, 0.06);
+}
+
+.num {
+    font-family: var(--font-mono);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Badges ---------- */
+
+.badge {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 100px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.badge-pending, .badge-confirmed, .badge-packed { background: #F1E9D6; color: var(--color-turmeric-dark); }
+.badge-shipped { background: #DCE6F0; color: #3A5A80; }
+.badge-delivered { background: var(--color-cardamom-bg); color: var(--color-cardamom); }
+.badge-cancelled { background: var(--color-chili-bg); color: var(--color-chili); }
+.badge-active { background: var(--color-cardamom-bg); color: var(--color-cardamom); }
+.badge-inactive, .badge-archived { background: #EDEAE3; color: var(--color-ink-soft); }
+
+/* ---------- Buttons ---------- */
+
+button, .btn {
+    font-family: var(--font-body);
+    font-size: 0.88rem;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--color-line);
+    background: var(--color-paper-raised);
+    color: var(--color-ink);
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+}
+
+button:hover, .btn:hover {
+    border-color: var(--color-turmeric);
+}
+
+.btn-primary {
+    background: var(--color-turmeric);
+    border-color: var(--color-turmeric);
+    color: var(--color-paper-raised);
+}
+
+.btn-primary:hover {
+    background: var(--color-turmeric-dark);
+    border-color: var(--color-turmeric-dark);
+}
+
+.btn-danger {
+    background: var(--color-paper-raised);
+    border-color: var(--color-chili);
+    color: var(--color-chili);
+}
+
+.btn-danger:hover {
+    background: var(--color-chili-bg);
+}
+
+.btn-sm {
+    padding: 0.3rem 0.7rem;
+    font-size: 0.8rem;
+}
+
+/* ---------- Forms ---------- */
+
+label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-bottom: 0.3rem;
+    color: var(--color-ink-soft);
+}
+
+input, select, textarea {
+    width: 100%;
+    padding: 0.55rem 0.7rem;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius);
+    font-family: var(--font-body);
+    font-size: 0.92rem;
+    background: var(--color-paper-raised);
+    color: var(--color-ink);
+    margin-bottom: 1rem;
+}
+
+input:focus, select:focus, textarea:focus {
+    outline: 2px solid var(--color-turmeric);
+    outline-offset: 1px;
+    border-color: var(--color-turmeric);
+}
+
+/* ---------- Login page ---------- */
+
+.login-shell {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-paper);
+}
+
+.login-card {
+    background: var(--color-paper-raised);
+    border-radius: var(--radius);
+    box-shadow: 0 2px 12px rgba(43, 38, 32, 0.1);
+    padding: 2.5rem 2.5rem 2rem 2.5rem;
+    width: 100%;
+    max-width: 360px;
+    border-top: 3px solid var(--color-turmeric);
+}
+
+.login-card .brand {
+    font-family: var(--font-display);
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--color-turmeric-dark);
+    margin-bottom: 0.25rem;
+}
+
+.login-card .subtitle {
+    color: var(--color-ink-soft);
+    font-size: 0.88rem;
+    margin-bottom: 1.5rem;
+}
+
+/* ---------- Utility ---------- */
+
+.error-text {
+    color: var(--color-chili);
+    font-size: 0.85rem;
+    margin: -0.5rem 0 1rem 0;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 2.5rem 1rem;
+    color: var(--color-ink-soft);
+}
+
+.text-muted {
+    color: var(--color-ink-soft);
+}
+
+.mt-1 { margin-top: 1rem; }
+.mb-1 { margin-bottom: 1rem; }
+
+/* ---------- Accessibility ---------- */
+
+:focus-visible {
+    outline: 2px solid var(--color-turmeric);
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        transition: none !important;
+        animation: none !important;
+    }
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 720px) {
+    .app-shell {
+        flex-direction: column;
+    }
+    .sidebar {
+        width: 100%;
+    }
+    .main-content {
+        padding: 1.25rem;
+    }
+}
+
+/* ---------- Modal ---------- */
+
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(43, 38, 32, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+.modal-box {
+    background: var(--color-paper-raised);
+    border-radius: var(--radius);
+    padding: 1.75rem 2rem;
+    width: 100%;
+    max-width: 480px;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 20px rgba(43, 38, 32, 0.2);
+}

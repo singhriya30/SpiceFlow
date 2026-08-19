@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpiceFlow — Products</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <div class="app-shell">
+        <div id="sidebar-container"></div>
+
+        <div class="main-content">
+            <div class="page-header">
+                <h1>Products</h1>
+                <button class="btn-primary" id="add-product-btn">+ Add Product</button>
+            </div>
+
+            <div class="card">
+                <input type="text" id="search-input" placeholder="Search products...">
+            </div>
+
+            <div class="card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>SKU</th>
+                            <th>Category</th>
+                            <th class="num">Price</th>
+                            <th>Status</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="products-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="product-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-box">
+            <h2 id="modal-title">Add Product</h2>
+            <form id="product-form">
+                <input type="hidden" id="product-id">
+
+                <label for="name">Name</label>
+                <input type="text" id="name" required>
+
+                <label for="sku">SKU</label>
+                <input type="text" id="sku" required>
+
+                <label for="category_id">Category</label>
+                <select id="category_id" required></select>
+
+                <label for="description">Description</label>
+                <textarea id="description" rows="2"></textarea>
+
+                <label for="weight">Weight</label>
+                <input type="text" id="weight" placeholder="e.g. 500g" required>
+
+                <label for="price">Price (₹)</label>
+                <input type="number" id="price" step="0.01" min="0.01" required>
+
+                <label for="image_url">Image URL</label>
+                <input type="text" id="image_url">
+
+                <label for="status">Status</label>
+                <select id="status">
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="archived">Archived</option>
+                </select>
+
+                <p id="form-error" class="error-text" style="display: none;"></p>
+
+                <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                    <button type="submit" class="btn-primary">Save</button>
+                    <button type="button" class="btn" id="cancel-btn">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/layout.js"></script>
+    <script>
+        let categoriesById = {};
+        let allProducts = [];
+
+        function formatCurrency(amount) {
+            return "₹" + Number(amount).toLocaleString("en-IN", { minimumFractionDigits: 2 });
+        }
+
+        async function loadCategories() {
+            const categories = await apiRequest("/categories/");
+            categoriesById = {};
+            categories.forEach(cat => { categoriesById[cat.id] = cat.category_name; });
+            return categories;
+        }
+
+        async function loadProducts(searchTerm = "") {
+            const query = searchTerm ? `?search=${encodeURIComponent(searchTerm)}` : "";
+            const products = await apiRequest(`/products/${query}`);
+            allProducts = products;
+            const tbody = document.getElementById("products-table-body");
+
+            if (products.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="empty-state">No products found.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = products.map(p => `
+                <tr>
+                    <td>${p.name}</td>
+                    <td>${p.sku}</td>
+                    <td>${categoriesById[p.category_id] || "—"}</td>
+                    <td class="num">${formatCurrency(p.price)}</td>
+                    <td><span class="badge badge-${p.status}">${p.status}</span></td>
+                    <td><button class="btn-sm" onclick="openEditForm('${p.id}')">Edit</button></td>
+                </tr>
+            `).join("");
+        }
+
+        document.getElementById("search-input").addEventListener("input", (e) => {
+            loadProducts(e.target.value);
+        });
+
+        async function populateCategoryDropdown() {
+            const select = document.getElementById("category_id");
+            select.innerHTML = Object.entries(categoriesById)
+                .map(([id, name]) => `<option value="${id}">${name}</option>`)
+                .join("");
+        }
+
+        function openModal(title) {
+            document.getElementById("modal-title").textContent = title;
+            document.getElementById("form-error").style.display = "none";
+            document.getElementById("product-modal").style.display = "flex";
+        }
+
+        function closeModal() {
+            document.getElementById("product-modal").style.display = "none";
+            document.getElementById("product-form").reset();
+            document.getElementById("product-id").value = "";
+        }
+
+        async function openAddForm() {
+            await populateCategoryDropdown();
+            openModal("Add Product");
+        }
+
+        async function openEditForm(productId) {
+            await populateCategoryDropdown();
+
+            const product = allProducts.find(p => p.id === productId);
+            if (!product) return;
+
+            document.getElementById("product-id").value = product.id;
+            document.getElementById("name").value = product.name;
+            document.getElementById("sku").value = product.sku;
+            document.getElementById("category_id").value = product.category_id;
+            document.getElementById("description").value = product.description || "";
+            document.getElementById("weight").value = product.weight;
+            document.getElementById("price").value = product.price;
+            document.getElementById("image_url").value = product.image_url || "";
+            document.getElementById("status").value = product.status;
+
+            openModal("Edit Product");
+        }
+
+        document.getElementById("add-product-btn").addEventListener("click", openAddForm);
+        document.getElementById("cancel-btn").addEventListener("click", closeModal);
+
+        document.getElementById("product-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const errorEl = document.getElementById("form-error");
+            errorEl.style.display = "none";
+
+            const productId = document.getElementById("product-id").value;
+            const payload = {
+                name: document.getElementById("name").value,
+                sku: document.getElementById("sku").value,
+                category_id: document.getElementById("category_id").value,
+                description: document.getElementById("description").value || null,
+                weight: document.getElementById("weight").value,
+                price: parseFloat(document.getElementById("price").value),
+                image_url: document.getElementById("image_url").value || null,
+                status: document.getElementById("status").value
+            };
+
+            try {
+                if (productId) {
+                    await apiRequest(`/products/${productId}`, "PUT", payload);
+                } else {
+                    await apiRequest("/products/", "POST", payload);
+                }
+                closeModal();
+                await loadProducts();
+            } catch (err) {
+                errorEl.textContent = err.message;
+                errorEl.style.display = "block";
+            }
+        });
+
+        (async function init() {
+            const user = await initLayout("products.html");
+            if (!user) return;
+
+            try {
+                await loadCategories();
+                await loadProducts();
+            } catch (err) {
+                alert("Failed to load products: " + err.message);
+            }
+        })();
+    </script>
+</body>
+</html>

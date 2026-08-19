@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpiceFlow — Dashboard</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <div class="app-shell">
+        <div id="sidebar-container"></div>
+
+        <div class="main-content">
+            <div class="page-header">
+                <div>
+                    <h1>Dashboard</h1>
+                    <p class="text-muted" id="welcome-msg"></p>
+                </div>
+            </div>
+
+            <div class="card-grid" id="summary-cards"></div>
+
+            <div class="card">
+                <h2>Order status breakdown</h2>
+                <div id="status-breakdown"></div>
+            </div>
+
+            <div class="card">
+                <h2>Low stock alerts</h2>
+                <div id="low-stock-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/layout.js"></script>
+    <script>
+        function formatCurrency(amount) {
+            return "₹" + Number(amount).toLocaleString("en-IN", { minimumFractionDigits: 2 });
+        }
+
+        async function loadSummary() {
+            const summary = await apiRequest("/analytics/summary");
+
+            document.getElementById("summary-cards").innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-label">Total Revenue</div>
+                    <div class="stat-value">${formatCurrency(summary.total_revenue)}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Orders</div>
+                    <div class="stat-value">${summary.total_orders}</div>
+                </div>
+            `;
+
+            const statusRows = Object.entries(summary.orders_by_status)
+                .map(([status, count]) => `
+                    <div style="display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid var(--color-line);">
+                        <span class="badge badge-${status}">${status}</span>
+                        <span class="num">${count}</span>
+                    </div>
+                `).join("");
+
+            document.getElementById("status-breakdown").innerHTML = statusRows;
+        }
+
+        async function loadLowStock() {
+            const items = await apiRequest("/inventory/low-stock");
+            const container = document.getElementById("low-stock-list");
+
+            if (items.length === 0) {
+                container.innerHTML = `<p class="empty-state">No products are currently low on stock.</p>`;
+                return;
+            }
+
+            container.innerHTML = `
+                <table>
+                    <thead>
+                        <tr><th>Product ID</th><th class="num">Quantity</th><th class="num">Minimum</th></tr>
+                    </thead>
+                    <tbody>
+                        ${items.map(item => `
+                            <tr>
+                                <td>${item.product_id}</td>
+                                <td class="num">${item.quantity}</td>
+                                <td class="num">${item.minimum_stock}</td>
+                            </tr>
+                        `).join("")}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        (async function init() {
+            const user = await initLayout("dashboard.html");
+            if (!user) return;
+
+            document.getElementById("welcome-msg").textContent = `Welcome back, ${user.first_name}`;
+
+            try {
+                await loadSummary();
+                await loadLowStock();
+            } catch (err) {
+                alert("Failed to load dashboard data: " + err.message);
+            }
+        })();
+    </script>
+</body>
+</html>

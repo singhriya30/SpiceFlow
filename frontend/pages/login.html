@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpiceFlow — Login</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <div class="login-shell">
+        <div class="login-card">
+            <div class="brand">SpiceFlow</div>
+            <div class="subtitle">Business dashboard login</div>
+
+            <form id="login-form">
+                <label for="email">Email</label>
+                <input type="email" id="email" required autocomplete="email">
+
+                <label for="password">Password</label>
+                <input type="password" id="password" required autocomplete="current-password">
+
+                <p id="error-message" class="error-text" style="display: none;"></p>
+
+                <button type="submit" class="btn-primary" style="width: 100%;" id="submit-btn">Log in</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+    <script>
+        const form = document.getElementById("login-form");
+        const errorMessage = document.getElementById("error-message");
+        const submitBtn = document.getElementById("submit-btn");
+
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            errorMessage.style.display = "none";
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Logging in...";
+
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+
+            try {
+                const response = await apiRequest("/auth/login", "POST", { email, password });
+                saveToken(response.access_token);
+
+                const user = await apiRequest("/auth/me");
+
+                if (user.role_name === "Customer") {
+                    errorMessage.textContent = "This login is for staff accounts only.";
+                    errorMessage.style.display = "block";
+                    logout();
+                    return;
+                }
+
+                window.location.href = "dashboard.html";
+            } catch (err) {
+                errorMessage.textContent = err.message || "Login failed. Please check your credentials.";
+                errorMessage.style.display = "block";
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Log in";
+            }
+        });
+    </script>
+</body>
+</html>
